@@ -33,3 +33,32 @@ viz. Černíková ujep, někde to má
 2. Výběr testu: Dvouvýběrový t test (normální data, rovnost rozptylů)/ Welschův test(normální data, nerovnost rozptylů)/ Wilconoxův test(nenormální data)
 3. Test shody dvou rozptylů: H0 ... Rozptyly se neliší, HA ... Rozptyly se liší; vzoreček
 4. Provedení testu: vzorečky!
+
+
+
+## Přednáška 2
+# Významnost
+### Vliv velikosti vzorku na výsledek testu
+- málo pozorování -> velká p-hodnota
+- hodně pozorování -> malá p-hodnota; prokáže se téměř vše
+- statistické testy nejlépe fungují s cca **100** pozorováními
+
+### Významnost
+- je **věcná** a **statistická**
+
+### Tabulka analýzy rozptylu
+- porovnání **vysvětlené** (variabilita mezi výběry - jak se liší průměry) a **nevysvětlené**(jak se v rámci každého výběru liší dané pozorování od stř. hodnoty) variability
+- často v **ANOVA** (= porovnání střední hodnoty v nezávislých výběrech)
+- více v prezentaci, i cannot :-)
+
+
+
+
+
+
+
+
+
+
+
+
