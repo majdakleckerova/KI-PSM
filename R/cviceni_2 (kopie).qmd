@@ -1,0 +1,367 @@
+---
+title: "Cvičení 2"
+format: 
+    html: 
+        self-contained: true
+editor: visual
+---
+
+# Cvičení 2
+
+-   stažení dvou knihoven: **pwr** (), **effectsize**
+-   o věcné a statistické významnosti
+
+## 1. Odhad počtu pozorování
+
+```{r}
+library(pwr)
+```
+
+### Úloha 1
+
+*Kolik pozorování potřebuji k tomu, abych odhalila rozdíl oproti nulové hypotéze o velikosti 3, směrodatné odchylce 5, se sílou testu 0.95, na hladině významnosti 0.05?* - použijeme **jednovýběrový t.test**
+
+```{r}
+pwr.t.test(d = 3/5, sig.level = 0.05, power = 0.95, type = "one.sample")
+```
+
+**Interpretace výstupu** Spočítá pro danou sílu testu počet pozorování, nebo pro počet pozorování sílu testu. Zjistíme, **kolik pozorování potřebujeme**. Zde je to alespoň **38**. **d** je ukazatel věcné významnosti; velikost/směrodatná odchylka
+
+#### Wilcoxonův test
+
+Potřebujeme o cca **15%** více pozorování, než test udává.
+
+```{r}
+(n <- pwr.t.test(d=3/5, sig.level=0.05, power=0.95,type="one.sample")$n)
+n*1.15
+```
+
+### Úloha 2
+
+A kolik potrebuji pozorovani, kdyz chci odhalit rozdil ve dvou skupinach o velikosti 8, pri ocekavane sdruzene smerodatne odchylce 20, se silou testu 0.95, na hladine vyznamnosti 0.05.
+
+```{r}
+pwr.t.test(d = 8/20, sig.level = 0.05, power = 0.95, type = "two.sample")
+```
+
+### Úloha 3
+
+Chceme použít **chí-kvadrát test**. "Effect size" je soucet (pi - p0i)\^2/p0i pres vsechny kategorie a odpovida Cramerovu phi. Chceme-li otestovat pravdepodobnostni rozdeleni kategoricke promenne se **ctyrmi** kategoriemi. Kolik potrebujeme pozorovani, kdyz chceme tento effekt o velikosti 0.3, silu testu 0.8 a hlaadinu vyznamnosti 0.05?
+
+```{r}
+pwr.chisq.test(w = 0.3, df = (4-1), power = 0.8, sig.level = 0.05 )
+```
+
+### Úloha 4 (Nezávislost dvou kategorických veličin)
+
+kolik budeme potrebovat pozorovani, kdyz budeme testovat nezavislost dvou kategorickych promennych se tremi a ctyrmi kategoriemi. Zajima nas "effect size" o velikosti 0.2, sila testu 0.8 a hladina vyznamnosti 0.05.
+
+```{r}
+pwr.chisq.test(w = 0.2,df = (3-1)*(4-1), power = 0.8, sig.level = 0.05)
+```
+
+### Úloha 5
+
+Kolik potrebuji pozorovani, kdyz chci odhalit odchylku od nulove hypotezy o velikosti 1, pri smerodatne odchylce 5, se silou testu 0.90, na hladine vyznamnosti 0.05?
+
+```{r}
+pwr.t.test(d = 1/5, power = 0.9, sig.level = 0.05, type = "one.sample")
+```
+
+**264**\
+\### Úloha 6 Kolik potrebuji pozorovani, kdyz chci odhalit rozdil ve dvou skupinach o velikosti 5, pri ocekavane sdruzene smerodatne odchylce 10, se silou testu 0.9, na hladine vyznamnosti 0.05.
+
+```{r}
+pwr.t.test(d = 5/10, power = 0.9, sig.level = 0.05, type = "two.sample")
+```
+
+**85**\
+\### Úloha 7 kolik budeme potrebovat pozorovani, kdyz budeme testovat nezavislost dvou kategorickych promennych s peti a ctyrmi kategoriemi. Zajima nas "effect size" o velikosti 0.4, sila testu 0.9 a hladina vyznamnosti 0.05.
+
+```{r}
+pwr.chisq.test(w = 0.4, df = (5-1)*(4-1), power = 0.9, sig.level = 0.05)
+```
+
+**136**
+
+## 2. Věcná významnost
+
+```{r}
+load("/Users/majdikleckerova/Desktop/KMA:PSM/Stulong.RData")
+library(effectsize)
+library(DescTools)
+names(Stulong)<-c("ID", "vyska", "vaha", "syst1", "syst2", "chlst", "vino", "cukr",
+                  "bmi", "vek", "KOURrisk", "Skupina", "VekK")
+```
+
+### Úloha 1
+
+Je vyznamny rozdil ve vysce mezi starsimi a mladsimi muzi? (promenne vyska, VekK)
+
+```{r}
+ciselna <- Stulong$vyska
+kategoricka <- Stulong$VekK
+```
+
+#### Test normality pro kazdou skupinu zvlast
+
+```{r}
+par(mfrow = c(1,2))
+tapply(ciselna, kategoricka, PlotQQ)
+par(mfrow = c(1,1))
+```
+
+```{r}
+tapply(ciselna, kategoricka, shapiro.test)
+```
+
+#### Test shody rozptylu
+
+```{r}
+var.test(ciselna ~ kategoricka)
+```
+
+```{r}
+t.test(ciselna ~ kategoricka)
+```
+
+Skupiny se liší zhruba o **1.3** cm (rozdíl středních hodnot skupin). Vyšlo nám, že rozdíl je statisticky významný, co ale věcná významnost?
+
+### Statistiky věcné významnosti
+
+1.  **Cohenovo d**
+
+-   pokud hodnota ukazatele \< 0.5, jde o **malý efekt**
+
+```{r}
+cohens_d(ciselna ~ kategoricka)
+interpret_cohens_d(cohens_d(ciselna ~ kategoricka))
+```
+
+2.  **Hedgesovo g**
+
+```{r}
+hedges_g(ciselna ~ kategoricka)
+interpret_hedges_g(hedges_g(ciselna ~ kategoricka))
+```
+
+3.  **Glassovo delta**
+
+-   variabilita vychází z referenční, výzkumné skupiny
+
+```{r}
+glass_delta(ciselna ~ kategoricka)
+interpret_glass_delta(glass_delta(ciselna ~ kategoricka))
+```
+
+4.  **Fisherovo eta**
+
+-   v případě, kdy porovnáváme více různých výběrů (primárně více než dva)
+-   funkce ANOVA spočítá tabullu analýzy rozptylů (porovnání součty čtverců vysvětlené se všemi, vychází z toho procento vysvětlené vyriability)
+
+```{r}
+eta_squared(aov(ciselna ~ kategoricka))
+  (A <- anova(aov(ciselna ~ kategoricka)))
+    A[,2]
+    A[1,2]/(sum(A[,2]))
+  interpret_eta_squared(0.01, rules = "cohen1992")
+```
+
+*Vychází, že se vysvětlilo 1%, což je nic.*
+
+5.  **Haysova omega**
+
+```{r}
+omega_squared(aov(ciselna ~ kategoricka))
+  (A[1,2] - A[2,3])/(sum(A[,2]) + A[2,3])
+
+epsilon_squared(aov(ciselna ~ kategoricka))
+```
+
+## 3. Analýza rozptylu
+
+-   obrázek skupin - krabicový graf
+-   porovnáváme pomocí nějakých vah
+
+```{r}
+ciselna <- Stulong$vaha
+kategoricka <- Stulong$Skupina
+
+plot(ciselna ~ kategoricka)
+```
+
+-   **Předpoklady**: normalita, shoda rozptylů
+-   3 typy testů:
+
+1.  ANOVA ... normální rozdělení, shodné rozptyly; anova(aov(ciselna \~ kategoricka))...tabulka analyzy rozptylu
+2.  Welschova ANOVA ... normální rozdělení, různé rozptyly; oneway.test(ciselna \~ kategoricka, var.eq = FALSE)
+3.  Kruskal-Wallisův test ... nenormální rozdělení; kruskal.test(ciselna \~ kategoricka)
+
+### Test normality pro rezidua modelu
+
+```{r}
+res <- residuals(lm(ciselna ~ kategoricka))
+PlotQQ(res, pch = 19)
+```
+
+Vidíme odchylky od normality.
+
+### Test shody rozptylu
+
+```{r}
+bartlett.test(ciselna ~ kategoricka)
+```
+
+Takže máme **jiné než normální** rozdělení a **různé rozptyly**. Použijeme tedy **Kruskal-Wallisův test**.
+
+```{r}
+kruskal.test(ciselna ~ kategoricka)
+```
+
+Zamítáme H0, protože p-hodnota je menší než hladina významnosti. Vyšlo, že se skupiny **liší**. Chceme zjistit, které konkrétní dvojice skupin se od sebe **významně** liší. Mělo by nás napadnout, že by to šlo dvouvýběrovým t.testem a srovnáním všech kombinací dvojic skupin. Lepší je ale použít následující
+
+### Párové srovnání
+
+1.  **Párové srovnání pro normálně rozdělená data**
+
+```{r}
+TukeyHSD(aov(ciselna ~ kategoricka))
+plot(TukeyHSD(aov(ciselna ~ kategoricka)))
+```
+
+2.  **Nenormálně rozdělená data**
+
+```{r}
+DunnTest(ciselna ~ kategoricka)
+```
+### Zjištění věcné významnosti
+- procento vysvětlené variability
+```{r}
+eta_squared(aov(ciselna ~ kategoricka))
+  interpret_eta_squared(0.03, rules = "cohen1992")
+
+omega_squared(aov(ciselna ~ kategoricka))
+  interpret_omega_squared(0.02, rules = "cohen1992")
+
+epsilon_squared(aov(ciselna ~ kategoricka))
+  interpret_epsilon_squared(0.02, rules = "cohen1992")
+```
+**Výstup:** 3%,2%,2% vysv. variability neudávají skoro nic.
+
+### Úloha 
+Souvisi spolu diagnosticka Skupina a vek muzu (promenne Skupina, VekK)
+```{r}
+kat1 <- Stulong$Skupina
+kat2 <- Stulong$VekK
+
+(tab <- table(kat1, kat2))
+plot(as.factor(kat1) ~ as.factor(kat2), col=2:5)
+
+# Test normality
+chisq.test(kat1, kat2)
+
+# Netušim
+cramers_v(tab)
+  sqrt(chisq.test(tab)$statistic/(sum(tab)*(ncol(tab)-1)))
+cohens_w(tab)
+```
+
+### Úloha 2
+Souvisi spolu vaha a hladina cholesterolu?
+```{r}
+cislo1 <- Stulong$vaha
+cislo2 <- Stulong$chlst
+plot(cislo1 ~ cislo2, pch=19, main="Souvislost vahy a hladiny cholesterolu")
+```
+```{r}
+cor(cislo1, cislo2)
+cor.test(cislo1, cislo2)
+  # Zavislost je statisticky vyznamna
+  interpret_r(cor(cislo1, cislo2))
+```
+Slabý, pozitivní vztah
+
+
+```{r}
+summary(lm(cislo1 ~ cislo2))$r.squared  
+  # koeficient determinace
+  # kolik procent variability zavisle promenne se modelem vysvetlilo
+  interpret_r2(summary(lm(cislo1 ~ cislo2))$r.squared)
+```
+
+### Úloha 3
+Zavisi bmi na koureni? Zjistete statistickou i vecnou vyznamnost.
+```{r}
+cislo <- Stulong$bmi
+kat <- Stulong$KOURrisk
+boxplot(cislo ~ kat)
+```
+test normality
+```{r}
+res <- residuals(lm(cislo ~ kat))
+PlotQQ(res, pch = 19)
+```
+- shoda rozptylu
+```{r}
+bartlett.test(cislo ~ kat)
+```
+Shodné.
+```{r}
+kruskal.test(cislo ~ kat)
+```
+Nezávisí.
+
+### Úloha 4
+Zavisi systolicky tlak na vaze?
+```{r}
+cislo1 <- Stulong$syst1
+cislo2 <- Stulong$vaha
+plot(cislo1 ~ cislo2, pch=19, main="Souvislost vahy a systolického tlaku")
+```
+Korelační koeficient
+```{r}
+cor.test(cislo1, cislo2)
+```
+Je statisticky významná závislost.
+```{r}
+summary(lm(cislo1 ~ cislo2))$r.squared  
+  interpret_r2(summary(lm(cislo1 ~ cislo2))$r.squared)
+```
+Vysvětluje 4.5% variability - věcně nevýznamné.
+
+### Úloha 5
+Je rozdil mezi skupinami v hladine cukru v krvi?
+```{r}
+kategorie <- Stulong$Skupina
+cislo <- Stulong$cukr
+plot(cislo ~ kategorie)
+```
+test normality
+```{r}
+res <- residuals(lm(cislo ~ kategorie))
+PlotQQ(res, pch = 19)
+```
+Nenormální rozdělení
+```{r}
+kruskal.test(cislo ~ kategorie)
+```
+Statisticky významná závislost.
+```{r}
+eta_squared(aov(cislo ~ kategorie))
+interpret_eta_squared(0.03, rules = "cohen1992")
+```
+
+
+
+### Úloha 6
+Je rozdil v systolickem tlaku u kuraku a nekuraku?
+
+### Úloha 7
+Lisi se vyska u tech co piji a nepiji vino?
+
+
+
+
+
+
+

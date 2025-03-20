@@ -1,0 +1,392 @@
+---
+title: "KMA/PSM"
+format: 
+    html:
+      self-contained: true
+editor: visual
+---
+
+# KMA/PSM
+
+## Cvičení 1
+
+### Základy testování hypotéz
+
+#### Načtení knihoven
+
+```{r}
+library(DescTools)
+library(TeachingDemos)
+load("Kojeni.RData")
+vyska <- Kojeni$vyskaM
+```
+
+#### Jednovýběrový t.test
+
+*Rozhodněte, zda střední hodnota výšky matek může být menší než 168.* H0: Výška = 168. (výška = nějaký řecký znak) H1: Výška \< 168. **vzorec**! znak = x s čarou - znak / sd(x) \* sqrt(n) \*x s čarou \~ N(divnej znak((sd(x)/sqrt(n))\*\*2))\*
+
+```{r}
+t.test(vyska, mu=168, alternative = "less")
+```
+
+Na hladině významnosti 5% jsme prokázali, že střední hodnota výšky matek je menší než 168 cm.
+
+#### Vykreslení p-hodnoty
+
+-   t-test pracuje s testovou statistikou \*\*T: T = sqrt(n)\*(mean(X) - mu)/sd(X)\*\*
+-   **p-hodnota** je pravděpodobnost, že za platnosti nulové hypotézy nastane výsledek, který nastal, nebo jakýkoliv jiný, který ještě víc vyhovuje alternativě.
+
+##### Graf - definice p-hodnoty
+
+1.  pravdepodobnost, ze za platnosti nulove hypotezy ... H0 rika, ze testova statistika a ma t-rozdeleni s n-1 stupni volnosti
+
+```{r}
+(T <- sqrt(length(prom1))*(mean(prom1) - 168)/sd(prom1))
+```
+
+```{r}
+prom1 <- sample(vyska, size = 30, replace = FALSE)  # Náhodný výběr 30 hodnot z vyska
+
+plot(x <- seq(-4,4,by=0.1), y=dt(x,length(prom1)-1), type="l",
+     col="blue", main="Teoretická hustota t-rozdělení za platnosti H0")
+  # testova statistika 
+lines(c(T,T), c(0,dt(T,length(prom1)-1)), col="red", lwd=2)
+xx <- c(seq(-4, T, by=0.1), T, T, -4)
+yy <- c(dt(c(seq(-4, T, by=0.1), T), length(vyska) - 1), 0, 0)
+polygon(xx, yy, density=40,col="red")
+xx2 <- c(-T, -T, seq(-T, 4, by=0.1), 4, -T)
+yy2 <- c(0, dt(c(-T, seq(-T, 4, by=0.1)), length(vyska) - 1), 0, 0)
+polygon(xx2, yy2, density=40, col="green")
+```
+
+3.  nebo jakakoliv jina hodnota, ktera jeste vic odpovida alternative alternativa je mensi nez
+
+rucni vypocet p-hodnoty pravdepodobnost hodnot mensich nez testova statistika T
+
+```{r}
+pt(T, length(prom1) - 1)
+```
+
+\# p-hodnota je distribucni funkce v hodnote testove statistiky
+
+v pripade oboustranne alternativy pridam jeste druhou skupinu hodnot - symetricky podle testove statistiky T U otazky typu: Muze byt populacni prumer vysky matek 168 cm? H0: vyska matek = 168 cm vs. H1: vyska matek \<\> 168 cm
+
+rucni vypocet p-hodnoty pt(T, length(vyska) - 1) + 1 - pt(-T, length(vyska) - 1) 2\*pt(T, length(vyska) - 1) pst je symetricka kolem nuly
+
+```{r}
+t.test(vyska, mu = 168)
+```
+
+```{r}
+  # kontrolni test
+  # p-hodnota 0.09659 > alfa 0.05 -> nezamitame H0
+  #   neprokazalo se, ze by vyska matek nemohla byt rovna 168 cm
+  #   muze byt rovna 168 cm, nebo je priblizne rovna 168 cm.
+
+# Jake rozdeleni ma p-hodnota za platnosti nulove hypotezy? 
+#	Jaka je pst, ze Vam vyjde p < 0.05? A jaka je pst, ze Vam vyjde p < 0.5?
+# Vyzkousime empiricky
+#	Predpokladejme, ze IQ ma normalni rozdeleni se stredni hodnotou 100 a rozptylem 225
+#   provedeme nahodny vyber z tohoto rozdeleni o rozsahu 200
+#	  a otestujeme nulovou hypotezu, ze stredni hodnota = 100
+#   ziskanou p-hodnotu zakreslim do grafu a cely postup opakuji 1000 krat
+#	vysledkem bude graf rozdeleni p-hodnot
+
+N <- 1000			# pocet vyberu
+n <- 200			# pocet pozorovani v jednom vyberu
+p.hodnoty <- rep(0,N)	# prazdny vektor pro prumery
+for (i in 1:N){
+  vyber<-round(rnorm(n,100,sqrt(225)),0)
+  p.hodnoty[i] <- t.test(vyber,mu=100)$p.value
+}
+hist(p.hodnoty)
+  # v idealnim pripade by vysly vsechny sloupce stejne vysoke
+(Y <- sum(p.hodnoty <= 0.05)/N)
+  # v kolika procentech pripadu vysla p-hodnota < 0.05
+(Y <- sum(p.hodnoty <= 0.5)/N)
+  # v kolika procentech pripadu vysla p-hodnota < 0.5
+
+# => p-hodnota ma rovnomerne rozdeleni na intervalu [0,1]
+
+## Co je sila testu
+# Pravdepodobnost, ze zamitnu nulovou hypotezu, kdyz plati vybrana alternativa
+power.examp()
+power.examp(diff = 3)
+power.examp(n = 25)
+power.examp(alpha = 0.1)
+
+###################################
+
+## Zjistete, zda stredni hodnota porodni hmotnosti deti muze byt 3.5 kg.
+#   POZOR: porodni hmotnost se meri v gramech!
+hmot <- Kojeni$por.hmotnost
+
+# predpokladem jednovyberoveho t-testu je normalita dat
+# Nejprve otestujeme normalitu
+#   H0: data maji normalni rozdeleni vs. H1: data nemaji normalni rozdeleni
+PlotQQ(hmot)
+  # body lezi priblizne na primce
+shapiro.test(hmot)
+  # p-hodnota 0.1623 > alfa => nezamitam H0
+  # i Q-Q plot, i test normality ukazuji, ze promenna ma priblizne normalni rozdeleni
+
+# pouzijeme jednovyberovy t-test
+# Testovane hypotezy: H0: porodni hmotnost = 3500 g  vs. H1: porodni hmotnost <> 3500 g
+t.test(hmot, mu = 3500)
+  # p-hodnota = 0.4943 > alfa => nezamitam H0
+  # stredni porodni hmotnost deti muze byt 3.5 kg.
+
+# Muze byt stredni hodnota vysky otcu vetsi nez 177 cm? (promenna vyskaO)
+# Muze byt hmotnost pulrocni deti v prumeru 7.5 kg? (promenna hmotnost)
+
+##################
+## Jednovyberovy Wilcoxonuv test
+
+# Jsou matky v prumeru starsi nez 23 let?
+vek <- Kojeni2$vekM
+
+# Nejprve otestujeme normalitu
+#   H0: data maji normalni rozdeleni vs. H1: data nemaji normalni rozdeleni
+PlotQQ(vek)
+  # body lezi na oblouku - mam sesikmene rozdeleni
+shapiro.test(vek)
+  # p-hodnota 0.00134 < alfa => zamitam H0
+  # i Q-Q plot, i test normality ukazuji, ze promenna nema normalni rozdeleni
+
+# pouzijeme neparametricky test
+# Testujeme
+#   H0: median vekM = 23 vs. H1: median vekM > 23
+
+# Wilcoxonuv test 
+wilcox.test(vek, mu=23, alternative="greater")
+  # p-hodnota 9.807e-09 < alfa 0.05 -> zamitam H0
+  # Prokazali jsme, ze stredni hodnota veku matek je vetsi nez 23 let.
+
+# Muze byt stredni hodnota delky pulrocnich deti 72 cm? (promenna delka)
+
+```
+
+### Dvouvýběrový t-test
+
+#### a. Pro normální data
+
+H0: Porodní hmotnost se neliší podle pohlaví. H1: Porodní hmotnost se liší podle pohlaví.
+
+```{r}
+promenna <- Kojeni$porHmotnost
+kategorie <- Kojeni$Hoch # Hodnota 1 když je to hoch
+```
+
+**Test normality dat - zvlášť pro každou skupinu** - H0: Data mají normální rozdělení. - H1: Data nemají normální rozdělení.
+
+```{r}
+# QQ-plot
+par(mfrow=c(1,2))
+tapply(cislo, kategorie, PlotQQ)
+```
+
+```{r}
+# Shapiro test; obě hodnoty > alfa; data mají přibližně normální rozdělení, nezamítáme H0; můžeme použít t-test
+par(mfrow=c(1,1))
+tapply(cislo, kategorie, shapiro.test)
+```
+
+```{r}
+# Boxplot
+boxplot(cislo ~ kategorie, main="Porodní hmotnost podle pohlaví", col=c(2,4))
+```
+
+**Testování** H0: por.hmotnost divek - por.hmotnost hochu = 0\
+H1: por.hmotnost divek - por.hmotnost hochu \<\> 0 - Máme na výběr dva testy: 1. t-test ... pro shodné rozptyly 2. Welschův test ... pro různé rozptyly
+
+H0: Rozptyly se neliší. H1: Rozptyly se liší
+
+```{r}
+var.test(cislo ~ kategorie)
+```
+
+P-hodnota = 0.886 \> alfa(0.05) ; Ponecháváme H0 -\> Rozptyly se neliší.
+
+```{r}
+t.test(cislo ~ kategorie, var.eq = T)
+  t.test(cislo ~ kategorie, mu=0, alternative="two.sided", var.eq = T)
+```
+
+P-hodnota = 0.005512 \< alfa (0.05) -\> Zamítáme nulovou hypotézu, platí alternativní -\>Porodní hmotnost se liší podle pohlaví.
+
+##### Jak zjistit, zda mají větší porodní hmotnost chlapci nebo dívky?
+
+-   Spojitost s intervaly spolehlivosti pro rozdíl; funkce MeanDiffCI používá Welschův test
+
+```{r}
+MeanDiffCI(cislo ~ kategorie)
+```
+
+#### b. Pro nenormální data
+
+-   Používá se Wilconoxův test \##### Úloha *Liší se věk maminek v Praze a na venkově (vekM, Porodnice)?*
+-   H0: Věk maminek v Praze a na venkově se neliší.
+-   H1: Věk maminek v Praze a na venkově se liší.
+
+```{r}
+cislo <- Kojeni$vekM
+kategorie <- Kojeni$Porodnice
+```
+
+**Test normality** ... zvlášť pro každou skupinu. - H0: Data mají normální rozdělení. - H1: Data nemají normální rozdělení.
+
+```{r}
+# QQplot
+par(mfrow=c(1,2))
+tapply(cislo,kategorie,PlotQQ)
+```
+
+**Data jsou nějakým způsobem zešikměná.**
+
+```{r}
+# Shapiro.test
+par(mfrow=c(1,1))
+tapply(cislo, kategorie, shapiro.test)
+```
+
+**Obě p-hodnoty jsou \> alfa ... zamítáme H0; Data nemají normální rozdělení.**
+
+###### Wilcoxonův test
+
+-   H0: matky z Prahy - matky z venkova = 0;
+-   H1: matky z Prahy - matky z venkova \<\> 0
+
+**Graficky**
+
+```{r}
+boxplot(cislo ~ kategorie, main="Věk matky podle místa porodu", col = "deeppink")
+```
+
+-   Chceme použít **Wilcoxonův test**; požadavek shody rozptylu
+-   H0: Rozptyly se neliší.
+-   H1: Rozptyly se liší.
+
+```{r}
+var.test(cislo ~ kategorie)
+```
+
+**Ponecháváme nulovou hypotézu s hladinou významnosti a = 0.05 -\> Rozptyly se neliší.**
+
+```{r}
+wilcox.test(cislo ~ kategorie)
+  wilcox.test(cislo ~ kategorie, conf.int = T)
+```
+
+Ponecháváme nulovou hypotézu - Neprokázal se statisticky významný rozdíl mezi věkem matek v Praze a na venkově. - Obsahuje neparametrický interval spolehlivosti a bodový odhad **pseudomediánu**
+
+#### Úloha 1
+
+```{r}
+View(Kojeni)
+```
+
+*Jsou matky, ktere daly dětem dudlíka, v průměru starší než ty, co jim ho nedaly? (proměnné vekM, Dudlik)* - H0: Věk matek se neliší podle toho, zda daly dětem dudlíka či ne. - H1: Věk matek, které daly dětem dudlíka je vyšší, než těch, co jim ho nedaly.
+
+```{r}
+kategorie <- Kojeni$Dudlik
+promenna <- Kojeni$vekM
+```
+
+**Test normality** - H0: Data mají normální rozdělení. - H1: Data nemají normální rozdělení.
+
+```{r}
+# Shapiro.test
+par(mfrow=c(1,1))
+tapply(promenna, kategorie, shapiro.test)
+```
+
+**P-hodnota obou kategorií \< alfa ... zamítám nulovou hypotézu -\> Data nemají normální rozdělení.** - Chceme použít **Wilcoxonův test**; požadavek shody rozptylu - H0: Rozptyly se neliší. - H1: Rozptyly se liší.
+
+```{r}
+var.test(promenna ~ kategorie)
+```
+
+**P-hodnota = 0.8116 \> alfa(0.05) ... ponechávám nulovou hypotézu -\> Rozptyly jsou shodné; mohu použít Wilcoxonův test.**
+
+```{r}
+wilcox.test(promenna ~ kategorie)
+  wilcox.test(promenna ~ kategorie, conf.int = T)
+```
+
+**Věk matek se neliší podle toho, zda daly dětem dudlík či ne.**
+
+#### Úloha 2
+
+*Jsou půlroční kluci v průměru těžší než půlroční dívky? (promenne hmotnost, Hoch)* \#### Úloha 3 *Jsou matky v Praze i na venkově stejně vysoké? (promenne vyskaM, Porodnice)* \#### Úloha 4 *Je rozdíl ve věku matek, které ještě v půl roce kojily a těch co nekojily? (promenne vekM, Koj24)*
+
+### Chí-kvadrát test
+
+##### Úloha
+
+*Souvisí spolu vzdělání matky a přítomnost otce u porodu?*
+
+```{r}
+vzdelani_matky <- Kojeni$Vzdelani
+otec_porod <- Kojeni$Otec
+```
+
+**Absolutní a relativní četnost**
+
+```{r}
+(tab <- table(vzdelani_matky,otec_porod))
+  prop.table(tab, 1)
+```
+
+```{r}
+plot(vzdelani_matky ~ otec_porod, col=2:4, main = "Závislost přítomnosti otce u porodu na vzdělání matky")
+```
+
+**Testované hypotézy** - H0: Vzdělání matky a přítomnost otce u porodu spolu nesouvisí. - H1: Vzdělání matky a přítomnost otce u porodu spolu souvisí.
+
+```{r}
+chisq.test(vzdel, otec)
+```
+
+**P-hodnota = 0.8345 \> a(0.05) ... Ponecháváme nulovou hypotézu -\> Neexistuje statisticky významná souvislost mezi vzděláním matky a přítomností otce u porodu.**
+
+**Předpoklad Chí-kvadrát testu** - Všechny očekávané četnosti musí být \> 5.
+
+```{r}
+chisq.test(vzdelani_matky, otec_porod)$ex
+```
+
+Platí.
+
+```{r}
+chisq.test(vzdelani_matky, otec_porod)
+```
+
+**Fisherův exaktní test** - Používáme v případě, kdy nejsou splněny požadavky Chí-kvadrát testu.
+
+```{r}
+fisher.test(vzdel, otec)
+```
+
+## Souvisi spolu misto porodu a pohlavi
+
+```{r}
+misto <- Kojeni$Porodnice
+pohlavi <- Kojeni$Hoch
+
+(tab <- table(misto,pohlavi))
+prop.table(tab, 1)
+  # Pravdepodobnost, ze se v Praze narodi holka
+  tab[1,1]/tab[1,2]
+    # sance, ze se v Praze narodi holka
+  
+chisq.test(tab)
+  # p-hodnota blizka 1 > 0.05 => nezamitame H0
+  # Neprokazal se rozdil mezi Prahou a okresem v pohlavi narozenych deti
+
+fisher.test(tab)
+  # na vystupu je videt pomer sanci
+  # sance na to mit holku je v Praze o neco mensi nez v okrese
+
+## Souvisi spolu vzdelani matky a to, zda bylo tehotenstvi planovane (Vzdelani, Plan)?
+## Souvisi pritomnost otce u porodu s mistem porodu (Otec, Porodnice)?
+```
